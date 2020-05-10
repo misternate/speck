@@ -4,10 +4,15 @@ import rumps
 
 username = 'misternate'
 redirect_uri = 'http://localhost:8888/callback/'
-scope = 'user-read-playback-state'
+scope = 'user-read-playback-state;user-library-modify'
 
+# ---- PORTABILITY UPDATES
 # create a config file where the user enters their username
 # write environment variable
+
+# ---- Convenience
+# favorite song from menu
+# auto skip commercials
 
 class App(rumps.App):
     def __init__(self):
