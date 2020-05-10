@@ -4,26 +4,35 @@ import rumps
 
 username = 'misternate'
 redirect_uri = 'http://localhost:8888/callback/'
-scope = 'user-read-playback-state;user-library-modify'
+scope = 'user-read-playback-state,user-library-modify'
 
 # ---- PORTABILITY UPDATES
 # create a config file where the user enters their username
 # write environment variable
 
 # ---- Convenience
-# favorite song from menu
+# favorite song from menu (if not already like, if liked Add remove)> pop notification when favorited
+# Pause / Play
 # auto skip commercials
 
 class App(rumps.App):
     def __init__(self):
-        super(App, self).__init__('Loading...')
+        super(App, self).__init__('Speck', icon='./resources/active.png')
         self.token = util.prompt_for_user_token(username, scope, redirect_uri=redirect_uri)
         self.state_prev = ''
         self.state = ''
         self.pause_count = 0
+        self.track_data = {}
 
+        self.menu = ['Add to Liked Songs', 'Skip Ads']
+        
         rumps.debug_mode(True)
-    
+
+    @rumps.clicked('Add to Liked Songs')
+    def like_song(self, song=None):
+        print(self.track_data)
+        rumps.notification(title='Speck', subtitle='', message=self.track_data['item']['name'] + ' added to Liked Songs.')
+
     def set_state(self, state, track=None, band=None):
         print(f'Prev: {self.state_prev}')
         print(f'Current: {self.state}')
@@ -49,15 +58,15 @@ class App(rumps.App):
     def update_track(self, sender):
         if self.token:
             spotify = spotipy.Spotify(auth=self.token)
-            track_data = spotify.current_user_playing_track()
+            self.track_data = spotify.current_user_playing_track()
             
-            if track_data is not None:
-                is_playing = track_data['is_playing']
+            if self.track_data is not None:
+                is_playing = self.track_data['is_playing']
                 
                 if is_playing is True:
                     self.state_prev = self.state
-                    track = track_data['item']['name']
-                    artists = track_data['item']['artists']
+                    track = self.track_data['item']['name']
+                    artists = self.track_data['item']['artists']
                     band = []
         
                     for artist in artists:
