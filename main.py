@@ -9,19 +9,15 @@ scope = 'user-read-playback-state'
 class App(rumps.App):
     def __init__(self):
         super(App, self).__init__('Loading...')
-        self.icon = './resources/active_48x48.png'
         self.token = util.prompt_for_user_token(username, scope, redirect_uri=redirect_uri)
         rumps.debug_mode(True)
     
     def set_state(self, state, track=None, band=None):
+        self.icon = f'./resources/{}.png'
         if state == 'active':
-            self.icon = './resources/active_48x48.png'
             self.title = str(band) + ' - ' + track
-        elif state == 'inactive':
-            self.icon = './resources/inactive_48x48.png'
-        elif state == 'paused':
-            self.icon = './resources/paused_48x48.png'
-            self.title = 'Paused'
+        else:
+            self.title = str.upper(f'{state}')
 
     #check if a song is playing
     @rumps.timer(10)
@@ -50,7 +46,7 @@ class App(rumps.App):
             else: # No track, Spotify is most likely not running
                 self.set_state('inactive')
         else: # No token available
-            self.set_state('inactive', No Token)
+            self.set_state('error', No Token)
 
 if __name__ == '__main__':
     app = App()
