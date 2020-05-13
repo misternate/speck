@@ -1,5 +1,6 @@
 import spotipy
 import spotipy.util as util
+from spotipy import SpotifyException
 import rumps
 
 username = 'misternate'
@@ -29,9 +30,11 @@ class App(rumps.App):
         rumps.debug_mode(True)
 
     @rumps.clicked('Add to Liked Songs')
-    def like_song(self, song=None):
-        print(self.track_data)
-        rumps.notification(title='Speck', subtitle='', message=self.track_data['item']['name'] + ' added to Liked Songs.')
+    def like_song(self, sender):
+        track_id = self.track_data['item']['id']
+        spotify = spotipy.Spotify(auth=self.token)
+        spotify.current_user_saved_tracks_add(tracks=[track_id])
+        rumps.notification(icon='./resources/app.png', title='Speck', subtitle='', message=self.track_data['item']['name'] + ' added to Liked Songs.')
 
     def set_state(self, state, track=None, band=None):
         print(f'Prev: {self.state_prev}')
@@ -44,22 +47,29 @@ class App(rumps.App):
     
         if state == 'active':
             self.title = str(band) + ' · ' + track
+            self.pause_count = 0
         else:
             self.title = str.capitalize(f'{state}')
 
         if self.state and self.state_prev == 'paused':
             self.pause_count += 1
-            print(self.pause_count)
+            print(f'Pause count: {self.pause_count}')
             # cool_down method (change update track to every 30, 60, 120, etc. seconds)
             # this requires using thread timer instead of rumps timer
 
-    #check if a song is playing
     @rumps.timer(10)
     def update_track(self, sender):
+        # 1. Break up auth and update_track() 2.Add Try/Except https://github.com/plamere/spotipy/issues/83 to update track auth function
+        # 3. Look at using OAuth instead :/
         if self.token:
             spotify = spotipy.Spotify(auth=self.token)
-            self.track_data = spotify.current_user_playing_track()
-            
+            print('Trying spotify(auth=self.token)')
+            try:
+                self.track_data = spotify.current_user_playing_track()
+            except SpotifyException:
+                self.token = util.prompt_for_user_token(username, redirect_uri=redirect_uri)
+                
+
             if self.track_data is not None:
                 is_playing = self.track_data['is_playing']
                 
@@ -84,8 +94,9 @@ class App(rumps.App):
             else: # No track, Spotify is most likely not running
                 self.state = 'inactive'
                 self.set_state(self.state)
-        else: # No token available
+        else:
             self.set_state('error')
+
 
 if __name__ == '__main__':
     app = App()
