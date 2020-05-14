@@ -6,6 +6,7 @@ import rumps
 username = 'misternate'
 redirect_uri = 'http://localhost:8888/callback/'
 scope = 'user-read-playback-state,user-library-modify'
+max_track_length = 32
 
 # ---- PORTABILITY UPDATES
 # create a config file where the user enters their username
@@ -14,6 +15,7 @@ scope = 'user-read-playback-state,user-library-modify'
 # ---- Convenience
 # favorite song from menu (if not already like, if liked Add remove)> pop notification when favorited
 # Pause / Play
+    # if paused, set a cooldown state until the user plays again
 # auto skip commercials
 
 class App(rumps.App):
@@ -25,16 +27,22 @@ class App(rumps.App):
         self.pause_count = 0
         self.track_data = {}
 
-        self.menu = ['Add to Liked Songs', 'Skip Ads']
+        self.menu = ['Like Song', 'Skip Ads']
         
         rumps.debug_mode(True)
 
-    @rumps.clicked('Add to Liked Songs')
+    @rumps.clicked('Like Song')
     def like_song(self, sender):
         track_id = self.track_data['item']['id']
         spotify = spotipy.Spotify(auth=self.token)
         spotify.current_user_saved_tracks_add(tracks=[track_id])
-        rumps.notification(icon='./resources/app.png', title='Speck', subtitle='', message=self.track_data['item']['name'] + ' added to Liked Songs.')
+        rumps.notification(icon='./resources/app.png', title='Added to Liked Songs', subtitle='', message=f'{self.track_data["item"]["artists"][0]["name"]} - {self.track_data["item"]["name"]}')
+
+    def shorten_text(self, string):
+        print(string)
+        if len(string) > max_track_length:
+            string = string[0:max_track_length] + '...'
+        return string
 
     def set_state(self, state, track=None, band=None):
         print(f'Prev: {self.state_prev}')
@@ -59,11 +67,10 @@ class App(rumps.App):
 
     @rumps.timer(10)
     def update_track(self, sender):
-        # 1. Break up auth and update_track() 2.Add Try/Except https://github.com/plamere/spotipy/issues/83 to update track auth function
+        # 1. Break up auth and update_track() 2.Add Try/Except https://github.com/plamere/spotipy/issues/83 on update_track() if auth fails auth function
         # 3. Look at using OAuth instead :/
         if self.token:
             spotify = spotipy.Spotify(auth=self.token)
-            print('Trying spotify(auth=self.token)')
             try:
                 self.track_data = spotify.current_user_playing_track()
             except SpotifyException:
@@ -75,14 +82,14 @@ class App(rumps.App):
                 
                 if is_playing is True:
                     self.state_prev = self.state
-                    track = self.track_data['item']['name']
                     artists = self.track_data['item']['artists']
                     band = []
         
                     for artist in artists:
                         band.append(artist['name'])
-                    band = ', '.join(band)
-                    
+                    band = self.shorten_text(', '.join(band))
+                    track = self.shorten_text(self.track_data['item']['name'])
+
                     self.state = 'active'
                     self.set_state(self.state, track, band)   
 
