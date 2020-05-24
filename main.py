@@ -5,7 +5,8 @@ import rumps
 
 username = 'misternate'
 redirect_uri = 'http://localhost:8888/callback/'
-scope = 'user-read-playback-state,user-library-modify'
+scope = 'user-read-playback-state,user-library-modify,user-modify-playback-state'
+
 max_track_length = 32
 
 # ---- PORTABILITY UPDATES
@@ -18,16 +19,21 @@ max_track_length = 32
     # if paused, set a cooldown state until the user plays again
 # auto skip commercials
 
+def authorization_token():
+    token = util.prompt_for_user_token(username, scope, redirect_uri=redirect_uri)
+
+    return token
+
+
 class App(rumps.App):
     def __init__(self):
         super(App, self).__init__('Speck', icon='./resources/active.png')
-        self.token = util.prompt_for_user_token(username, scope, redirect_uri=redirect_uri)
+        self.token = authorization_token()
         self.state_prev = ''
         self.state = ''
         self.pause_count = 0
         self.track_data = {}
-
-        self.menu = ['Like Song', 'Skip Ads']
+        self.menu = ['Pause/Play', 'Like Song', '']
         
         rumps.debug_mode(True)
 
@@ -36,7 +42,16 @@ class App(rumps.App):
         track_id = self.track_data['item']['id']
         spotify = spotipy.Spotify(auth=self.token)
         spotify.current_user_saved_tracks_add(tracks=[track_id])
-        rumps.notification(icon='./resources/app.png', title='Added to Liked Songs', subtitle='', message=f'{self.track_data["item"]["artists"][0]["name"]} - {self.track_data["item"]["name"]}')
+        rumps.notification(icon='./resources/app.png', title=None, subtitle=None, message=f'{self.track_data["item"]["artists"][0]["name"]} - {self.track_data["item"]["name"]}')
+
+    @rumps.clicked('Pause/Play')
+    def pause_song(self, sender):
+        spotify = spotipy.Spotify(auth=self.token)
+        if self.track_data['is_playing'] == False or self.track_data['is_playing'] is None:
+            spotify.start_playback()
+        else:
+            spotify.pause_playback()
+        self.update_track(self)
 
     def shorten_text(self, string):
         print(string)
@@ -56,6 +71,8 @@ class App(rumps.App):
         if state == 'active':
             self.title = str(band) + ' · ' + track
             self.pause_count = 0
+        elif state == 'paused':
+            self.title = f'{str.capitalize(state)} | {self.track_data["item"]["name"]}'
         else:
             self.title = str.capitalize(f'{state}')
 
@@ -74,9 +91,8 @@ class App(rumps.App):
             try:
                 self.track_data = spotify.current_user_playing_track()
             except SpotifyException:
-                self.token = util.prompt_for_user_token(username, redirect_uri=redirect_uri)
+                self.token = authorization_token()
                 
-
             if self.track_data is not None:
                 is_playing = self.track_data['is_playing']
                 
@@ -99,7 +115,7 @@ class App(rumps.App):
                     self.set_state(self.state)
 
             else: # No track, Spotify is most likely not running
-                self.state = 'inactive'
+                self.state = 'sleeping'
                 self.set_state(self.state)
         else:
             self.set_state('error')
