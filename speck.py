@@ -2,6 +2,7 @@ import spotipy
 import spotipy.util as util
 from spotipy import SpotifyException
 import rumps
+import requests
 
 username = 'misternate'
 redirect_uri = 'http://localhost:8888/callback/'
@@ -19,53 +20,36 @@ max_track_length = 32
     # if paused, set a cooldown state until the user plays again
 # auto skip commercials
 
-def authorization_token():
-    token = util.prompt_for_user_token(username, scope, redirect_uri=redirect_uri)
-
-    return token
-
-
 class App(rumps.App):
     def __init__(self):
         super(App, self).__init__('Speck', icon='./resources/active.png')
-        self.token = authorization_token()
+        self.token = self.authorization_token()
+        self.spotify = spotipy.Spotify(auth=self.token)
         self.state_prev = ''
         self.state = ''
         self.pause_count = 0
         self.track_data = {}
-        self.menu = ['Pause/Play', 'Like Song', '']
+        self.menu = ['Pause/Play', 'Previous', 'Next', 'Like', '']
         
         rumps.debug_mode(True)
 
-    @rumps.clicked('Like Song')
-    def like_song(self, sender):
-        track_id = self.track_data['item']['id']
-        spotify = spotipy.Spotify(auth=self.token)
-        spotify.current_user_saved_tracks_add(tracks=[track_id])
-        rumps.notification(icon='./resources/app.png', title=None, subtitle=None, message=f'{self.track_data["item"]["artists"][0]["name"]} - {self.track_data["item"]["name"]}')
-
-    @rumps.clicked('Pause/Play')
-    def pause_song(self, sender):
-        spotify = spotipy.Spotify(auth=self.token)
-        if self.track_data['is_playing'] == False or self.track_data['is_playing'] is None:
-            spotify.start_playback()
-        else:
-            spotify.pause_playback()
-        self.update_track(self)
+    def authorization_token(self):
+        token = util.prompt_for_user_token(username, scope=scope, redirect_uri=redirect_uri)
+        return token
+        
+    def download_album_art(self, url):
+        r = requests.get(url, allow_redirects=True)
+        open('./resources/artist.jpg', 'wb').write(r.content)
 
     def shorten_text(self, string):
-        print(string)
         if len(string) > max_track_length:
             string = string[0:max_track_length] + '...'
         return string
 
     def set_state(self, state, track=None, band=None):
-        print(f'Prev: {self.state_prev}')
-        print(f'Current: {self.state}')
-
         self.state = state
     
-        if self.state != self.state_prev: #do not unneccesarily change icon
+        if self.state != self.state_prev:
             self.icon = f'./resources/{state}.png'
     
         if state == 'active':
@@ -82,16 +66,40 @@ class App(rumps.App):
             # cool_down method (change update track to every 30, 60, 120, etc. seconds)
             # this requires using thread timer instead of rumps timer
 
+
+    @rumps.clicked('Like')
+    def like_song(self, sender):
+        self.download_album_art(self.track_data['item']['album']['images'][2]['url'])
+        rumps.notification(icon='./resources/artist.jpg', title='Saved to your liked songs', subtitle=None, message=f'{self.track_data["item"]["artists"][0]["name"]} - {self.track_data["item"]["name"]}')
+        track_id = self.track_data['item']['id']
+        self.spotify.current_user_saved_tracks_add(tracks=[track_id])
+
+    @rumps.clicked('Pause/Play')
+    def pause_play_track(self, sender):
+        if self.track_data['is_playing'] == False or self.track_data['is_playing'] is None:
+            self.spotify.start_playback()
+        else:
+            self.spotify.pause_playback()
+        self.update_track(self)
+
+    @rumps.clicked('Next')
+    def next_track(self, sender):
+        self.spotify.next_track()
+
+    @rumps.clicked('Previous')
+    def prev_track(self, sender):
+        self.spotify.previous_track()
+
     @rumps.timer(10)
     def update_track(self, sender):
         # 1. Break up auth and update_track() 2.Add Try/Except https://github.com/plamere/spotipy/issues/83 on update_track() if auth fails auth function
         # 3. Look at using OAuth instead :/
         if self.token:
-            spotify = spotipy.Spotify(auth=self.token)
             try:
-                self.track_data = spotify.current_user_playing_track()
+                self.track_data = self.spotify.current_user_playing_track()
             except SpotifyException:
-                self.token = authorization_token()
+                self.token = self.authorization_token()
+                self.spotify = spotipy.Spotify(auth=self.token)
                 
             if self.track_data is not None:
                 is_playing = self.track_data['is_playing']
