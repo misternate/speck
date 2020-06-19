@@ -1,3 +1,8 @@
+#!/usr/bin/env python3
+
+import sys
+import os
+
 import spotipy
 import spotipy.util as util
 from spotipy import SpotifyException
@@ -23,19 +28,29 @@ max_track_length = 32
 class App(rumps.App):
     def __init__(self):
         super(App, self).__init__('Speck', icon='./resources/active.png')
-        self.token = self.authorization_token()
-        self.spotify = spotipy.Spotify(auth=self.token)
+        self.token = ''
+        self.spotify = ''
         self.state_prev = ''
         self.state = ''
         self.pause_count = 0
         self.track_data = {}
-        self.menu = ['Pause/Play', 'Previous', 'Next', 'Like', '']
+        self.menu = [
+            'Pause/Play',
+            None,
+            'Next',
+            'Previous',
+            None,
+            'Like',
+            None,
+            'Refresh'
+            ]
+        self.authorize_spotify()
         
         rumps.debug_mode(True)
 
-    def authorization_token(self):
-        token = util.prompt_for_user_token(username, scope=scope, redirect_uri=redirect_uri)
-        return token
+    def authorize_spotify(self):
+        self.token = util.prompt_for_user_token(username, scope=scope, redirect_uri=redirect_uri)
+        self.spotify = spotipy.Spotify(auth=self.token)
         
     def download_album_art(self, url):
         r = requests.get(url, allow_redirects=True)
@@ -69,37 +84,56 @@ class App(rumps.App):
 
     @rumps.clicked('Like')
     def like_song(self, sender):
-        self.download_album_art(self.track_data['item']['album']['images'][2]['url'])
-        rumps.notification(icon='./resources/artist.jpg', title='Saved to your liked songs', subtitle=None, message=f'{self.track_data["item"]["artists"][0]["name"]} - {self.track_data["item"]["name"]}')
-        track_id = self.track_data['item']['id']
-        self.spotify.current_user_saved_tracks_add(tracks=[track_id])
+        try:
+            self.download_album_art(self.track_data['item']['album']['images'][2]['url'])
+            rumps.notification(icon='./resources/artist.jpg', title='Saved to your liked songs', subtitle=None, message=f'{self.track_data["item"]["artists"][0]["name"]} - {self.track_data["item"]["name"]}')
+            track_id = self.track_data['item']['id']
+            self.spotify.current_user_saved_tracks_add(tracks=[track_id])
+        except SpotifyException:
+            self.authorize_spotify()
 
     @rumps.clicked('Pause/Play')
     def pause_play_track(self, sender):
-        if self.track_data['is_playing'] == False or self.track_data['is_playing'] is None:
-            self.spotify.start_playback()
-        else:
-            self.spotify.pause_playback()
-        self.update_track(self)
+        try:
+            if self.track_data['is_playing'] == False or self.track_data['is_playing'] is None:
+                self.spotify.start_playback()
+            else:
+                self.spotify.pause_playback()
+            self.update_track(self)
+        except SpotifyException:
+            self.authorize_spotify()
 
     @rumps.clicked('Next')
     def next_track(self, sender):
-        self.spotify.next_track()
+        try:
+            self.spotify.next_track()
+            self.update_track()
+        except SpotifyException:
+            self.authorize_spotify()
 
     @rumps.clicked('Previous')
     def prev_track(self, sender):
-        self.spotify.previous_track()
+        try:
+            self.spotify.previous_track()
+            self.update_track()
+        except SpotifyException:
+            self.authorize_spotify()
+
+    @rumps.clicked('Refresh')
+    def restart(self, sender=None):
+        os.execv(__file__, sys.argv)
 
     @rumps.timer(10)
-    def update_track(self, sender):
+    def update_track(self, sender=None):
         # 1. Break up auth and update_track() 2.Add Try/Except https://github.com/plamere/spotipy/issues/83 on update_track() if auth fails auth function
         # 3. Look at using OAuth instead :/
         if self.token:
             try:
                 self.track_data = self.spotify.current_user_playing_track()
             except SpotifyException:
-                self.token = self.authorization_token()
-                self.spotify = spotipy.Spotify(auth=self.token)
+                self.authorize_spotify()
+                self.update_track()
+                
                 
             if self.track_data is not None:
                 is_playing = self.track_data['is_playing']
