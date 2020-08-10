@@ -2,6 +2,8 @@
 
 import sys
 import os
+import threading
+import time
 
 import spotipy
 import spotipy.util as util
@@ -45,12 +47,23 @@ class App(rumps.App):
             'Refresh'
             ]
         self.authorize_spotify()
-        
+
         rumps.debug_mode(True)
 
     def authorize_spotify(self):
         self.token = util.prompt_for_user_token(username, scope=scope, redirect_uri=redirect_uri)
         self.spotify = spotipy.Spotify(auth=self.token)
+        self.update_track()        
+    
+    def set_polling(self, duration):
+        thread = threading.Timer(duration, self.update_track)
+        thread.start()
+        print(f'----SET POLLING--- {thread} - {duration}')
+
+    def check_track_status(self,duration):
+        time.sleep(duration)
+        self.update_track()
+        self.check_track_status(2.0)
         
     def download_album_art(self, url):
         r = requests.get(url, allow_redirects=True)
@@ -122,11 +135,11 @@ class App(rumps.App):
     @rumps.clicked('Refresh')
     def restart(self, sender=None):
         os.execv(__file__, sys.argv)
-
-    @rumps.timer(10)
+    
     def update_track(self, sender=None):
         # 1. Break up auth and update_track() 2.Add Try/Except https://github.com/plamere/spotipy/issues/83 on update_track() if auth fails auth function
         # 3. Look at using OAuth instead :/
+        
         if self.token:
             try:
                 self.track_data = self.spotify.current_user_playing_track()
@@ -139,11 +152,14 @@ class App(rumps.App):
                 is_playing = self.track_data['is_playing']
                 
                 if is_playing is True:
+                    time_left = int(self.track_data['item']['duration_ms'])/1000 - int(self.track_data['progress_ms'])/1000
+                    self.set_polling(time_left)
+
                     self.state_prev = self.state
                     artists = self.track_data['item']['artists']
                     band = []
         
-                    for artist in artists:
+                    for artist in artists:  
                         band.append(artist['name'])
                     band = self.shorten_text(', '.join(band))
                     track = self.shorten_text(self.track_data['item']['name'])
@@ -155,14 +171,13 @@ class App(rumps.App):
                     self.state_prev = self.state
                     self.state = 'paused'
                     self.set_state(self.state)
-
+                
             else: # No track, Spotify is most likely not running
                 self.state = 'sleeping'
                 self.set_state(self.state)
         else:
             self.set_state('error')
-
-
+        
 if __name__ == '__main__':
     app = App()
     app.run()
