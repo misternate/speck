@@ -54,16 +54,6 @@ class App(rumps.App):
         self.token = util.prompt_for_user_token(username, scope=scope, redirect_uri=redirect_uri)
         self.spotify = spotipy.Spotify(auth=self.token)
         self.update_track()        
-    
-    def set_polling(self, duration):
-        thread = threading.Timer(duration, self.update_track)
-        thread.start()
-        print(f'----SET POLLING--- {thread} - {duration}')
-
-    def check_track_status(self,duration):
-        time.sleep(duration)
-        self.update_track()
-        self.check_track_status(2.0)
         
     def download_album_art(self, url):
         r = requests.get(url, allow_redirects=True)
@@ -98,8 +88,10 @@ class App(rumps.App):
     @rumps.clicked('Like')
     def like_song(self, sender):
         try:
-            self.download_album_art(self.track_data['item']['album']['images'][2]['url'])
-            rumps.notification(icon='./resources/artist.jpg', title='Saved to your liked songs', subtitle=None, message=f'{self.track_data["item"]["artists"][0]["name"]} - {self.track_data["item"]["name"]}')
+            # self.download_album_art(self.track_data['item']['album']['images'][2]['url'])
+            # rumps.notification(icon='./resources/artist.jpg', title='Saved to your liked songs', subtitle=None, message=f'{self.track_data["item"]["artists"][0]["name"]} - {self.track_data["item"]["name"]}')
+
+            rumps.notification(title='Saved to your liked songs', subtitle=None, message=f'{self.track_data["item"]["artists"][0]["name"]} - {self.track_data["item"]["name"]}')
             track_id = self.track_data['item']['id']
             self.spotify.current_user_saved_tracks_add(tracks=[track_id])
         except SpotifyException:
@@ -136,6 +128,7 @@ class App(rumps.App):
     def restart(self, sender=None):
         os.execv(__file__, sys.argv)
     
+    @rumps.timer(10)
     def update_track(self, sender=None):
         # 1. Break up auth and update_track() 2.Add Try/Except https://github.com/plamere/spotipy/issues/83 on update_track() if auth fails auth function
         # 3. Look at using OAuth instead :/
@@ -153,8 +146,6 @@ class App(rumps.App):
                 
                 if is_playing is True:
                     time_left = int(self.track_data['item']['duration_ms'])/1000 - int(self.track_data['progress_ms'])/1000
-                    self.set_polling(time_left)
-
                     self.state_prev = self.state
                     artists = self.track_data['item']['artists']
                     band = []
