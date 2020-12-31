@@ -2,20 +2,20 @@
 
 import sys
 import os
-import threading
-import time
 
 import spotipy
 import spotipy.util as util
 from spotipy import SpotifyException
 import rumps
-import requests
+# import requests only need for album art
 
-username = 'misternate'
-redirect_uri = 'http://localhost:8888/callback/'
-scope = 'user-read-playback-state,user-library-modify,user-modify-playback-state'
-
-max_track_length = 32
+USERNAME = 'misternate'
+REDIRECT_URI = 'http://localhost:8888/callback/'
+SCOPE = 'user-read-playback-state,user-library-modify,user-modify-playback-state'
+CLIENT_SECRET = ''
+CLIENT_ID = ''
+MAX_TRACK_LENGTH = 32
+MAX_RETRIES = 24
 
 # ---- PORTABILITY UPDATES
 # create a config file where the user enters their username
@@ -29,7 +29,7 @@ max_track_length = 32
 
 class App(rumps.App):
     def __init__(self):
-        super(App, self).__init__('Speck', icon='./resources/active.png')
+        super(App, self).__init__('Speck')
         self.token = ''
         self.spotify = ''
         self.state_prev = ''
@@ -37,31 +37,30 @@ class App(rumps.App):
         self.pause_count = 0
         self.track_data = {}
         self.menu = [
-            'Pause/Play',
-            None,
-            'Next',
-            'Previous',
-            None,
             'Like',
             None,
-            'Refresh'
+            'Pause/Play',
+            'Next',
+            'Previous',
+            'Refresh',
+            None
             ]
         self.authorize_spotify()
 
-        rumps.debug_mode(True)
+        # rumps.debug_mode(True)
 
     def authorize_spotify(self):
-        self.token = util.prompt_for_user_token(username, scope=scope, redirect_uri=redirect_uri)
-        self.spotify = spotipy.Spotify(auth=self.token)
+        self.token = util.prompt_for_user_token(USERNAME, scope=SCOPE, redirect_uri=REDIRECT_URI, client_id=CLIENT_ID, client_secret=CLIENT_SECRET)
+        self.spotify = spotipy.Spotify(auth=self.token, retries=MAX_RETRIES, status_retries=MAX_RETRIES)
         self.update_track()        
         
-    def download_album_art(self, url):
-        r = requests.get(url, allow_redirects=True)
-        open('./resources/artist.jpg', 'wb').write(r.content)
+    # def download_album_art(self, url):
+    #     r = requests.get(url, allow_redirects=True)
+    #     open('./resources/artist.jpg', 'wb').write(r.content)
 
-    def shorten_text(self, string):
-        if len(string) > max_track_length:
-            string = string[0:max_track_length] + '...'
+    def __shorten_text(self, string):
+        if len(string) > MAX_TRACK_LENGTH:
+            string = string[0:MAX_TRACK_LENGTH] + '...'
         return string
 
     def set_state(self, state, track=None, band=None):
@@ -152,8 +151,8 @@ class App(rumps.App):
         
                     for artist in artists:  
                         band.append(artist['name'])
-                    band = self.shorten_text(', '.join(band))
-                    track = self.shorten_text(self.track_data['item']['name'])
+                    band = self.__shorten_text(', '.join(band))
+                    track = self.__shorten_text(self.track_data['item']['name'])
 
                     self.state = 'active'
                     self.set_state(self.state, track, band)   

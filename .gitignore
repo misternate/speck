@@ -2,3 +2,5 @@
 .cache-misternate
 .vscode/
 env/
+dist/
+build/
