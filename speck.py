@@ -9,13 +9,15 @@ import spotipy.util as util
 from spotipy import SpotifyException
 import rumps
 
-USERNAME = 'misternate'
 REDIRECT_URI = 'http://localhost:8888/callback/'
 SCOPE = 'user-read-playback-state,user-library-modify,user-modify-playback-state'
-CLIENT_SECRET = ''
-CLIENT_ID = ''
 MAX_TRACK_LENGTH = 32
 MAX_RETRIES = 24
+
+USERNAME = ''
+CLIENT_SECRET = ''
+CLIENT_ID = ''
+
 
 # ---- PORTABILITY UPDATES
 # create a config file where the user enters their username
