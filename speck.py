@@ -18,17 +18,6 @@ USERNAME = ''
 CLIENT_SECRET = ''
 CLIENT_ID = ''
 
-
-# ---- PORTABILITY UPDATES
-# create a config file where the user enters their username
-# write environment variable
-
-# ---- Convenience
-# favorite song from menu (if not already like, if liked Add remove)> pop notification when favorited
-# Pause / Play
-    # if paused, set a cooldown state until the user plays again
-# auto skip commercials
-
 class App(rumps.App):
     def __init__(self):
         super(App, self).__init__('Speck')
@@ -44,7 +33,6 @@ class App(rumps.App):
             'Pause/Play',
             'Next',
             'Previous',
-            'Refresh',
             None
             ]
         self.authorize_spotify()
@@ -81,8 +69,7 @@ class App(rumps.App):
 
         if self.state and self.state_prev == 'paused':
             self.pause_count += 1
-            # cool_down method (change update track to every 30, 60, 120, etc. seconds)
-            # this requires using thread timer instead of rumps timer
+            # TODO: cool_down method (change update track to every 30, 60, 120, etc. seconds)
 
 
     @rumps.clicked('Like')
@@ -122,16 +109,9 @@ class App(rumps.App):
             self.update_track()
         except SpotifyException:
             self.authorize_spotify()
-
-    @rumps.clicked('Refresh')
-    def restart(self, sender=None):
-        os.execv(__file__, sys.argv)
     
     @rumps.timer(5)
-    def update_track(self, sender=None):
-        # TODO: 1. Break up auth and update_track() 2.Add Try/Except https://github.com/plamere/spotipy/issues/83 on update_track() if auth fails auth function
-        # TODO: 3. Look at using OAuth instead :/
-        
+    def update_track(self, sender=None):        
         if self.token:
             try:
                 self.track_data = self.spotify.current_user_playing_track()
@@ -155,7 +135,7 @@ class App(rumps.App):
                     self.state_prev = self.state
                     self.state = 'active'
 
-                else: # Spotify is Paused
+                else:
                     self.state_prev = self.state
                     self.state = 'paused'
                     

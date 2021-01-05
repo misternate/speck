@@ -22,7 +22,7 @@ setup(
     author="Nate Edwards",
     author_email="nathan.d.edwards@gmail.com",
 
-    description="A simple Spotify macOS menubar app.",
+    description="Speck is a little Spotify macOS menubar app.",
     long_description=read("README.md"),
 
     packages=find_packages(exclude=('tests',)),
