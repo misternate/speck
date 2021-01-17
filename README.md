@@ -8,7 +8,7 @@
 
 Speck is a little Spotify Mac menubar app that makes it easy to see what's playing at a glance, navigate your playlist, and like songs.
 
-![Speck demo](https://user-images.githubusercontent.com/1675353/103448779-eefd8f00-4c63-11eb-89e9-7e61a33bda50.png)
+![Speck demo](https://user-images.githubusercontent.com/1675353/104856939-d71c4100-58da-11eb-8fd2-2246db055fab.gif)
 
 ## Launching the app
 There's very little that's needed to get Speck running. To build locally:
