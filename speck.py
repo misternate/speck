@@ -96,10 +96,10 @@ class App(rumps.App):
         if self.state != self.state_prev:
             self.icon = f"./resources/{state}.png"
         if state == "active":
-            self.title = str(band) + " · " + track
+            self.title = track  + " · " + str(band)
             self.pause_count = 0
         elif state == "paused":
-            self.title = str(band) + " · " + track
+            self.title = track  + " · " + str(band)
         else:
             self.title = str.capitalize(f"{state}")
         if self.state and self.state_prev == "paused":
