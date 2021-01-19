@@ -13,9 +13,8 @@ MAX_RETRIES = 24
 UPDATE_INTERVAL = 5
 
 USERNAME = ""
-CLIENT_SECRET = ""
 CLIENT_ID = ""
-
+CLIENT_SECRET = ""
 
 class App(rumps.App):
     rumps.debug_mode(True)
