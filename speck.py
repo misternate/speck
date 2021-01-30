@@ -61,7 +61,8 @@ class App(rumps.App):
 
     def __get_active_device(self):
         devices = self.spotify.devices()["devices"]
-        active_devices = [device for device in devices if device["is_active"] is True]
+        active_devices = [
+            device for device in devices if device["is_active"] is True]
 
         if active_devices:
             active_device = active_devices[0]["id"]
@@ -96,7 +97,7 @@ class App(rumps.App):
         self.state = state
 
         if self.state != self.state_prev:
-            self.icon = f"./resources/{state}.png"
+            self.icon = f'./resources/{state}.png'
         if state == "active":
             self.title = track + " · " + str(band)
             self.pause_count = 0
@@ -172,7 +173,8 @@ class App(rumps.App):
 
                 for artist in artists:
                     band.append(self.__shorten_text(artist["name"]))
-                    track = self.__shorten_text(self.track_data["item"]["name"])
+                    track = self.__shorten_text(
+                        self.track_data["item"]["name"])
                 band = ", ".join(band)
 
                 if is_playing is True:
