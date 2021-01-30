@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import time
+import os
 
 import spotipy
 import spotipy.util as util
@@ -12,9 +13,10 @@ MAX_TRACK_LENGTH = 32
 MAX_RETRIES = 24
 UPDATE_INTERVAL = 5
 
-USERNAME = ""
-CLIENT_ID = ""
-CLIENT_SECRET = ""
+USERNAME = os.getenv("SPOTIPY_USERNAME")
+CLIENT_ID = os.getenv("SPOTIPY_CLIENT_ID")
+CLIENT_SECRET = os.getenv("SPOTIPY_CLIENT_SECRET")
+
 
 class App(rumps.App):
     rumps.debug_mode(True)
@@ -52,10 +54,10 @@ class App(rumps.App):
 
         self.update_track()
 
-    def __shorten_text(self, track_title):
-        if len(track_title) > MAX_TRACK_LENGTH:
-            track_title = track_title[0:MAX_TRACK_LENGTH] + "..."
-        return track_title
+    def __shorten_text(self, text):
+        if len(text) > MAX_TRACK_LENGTH:
+            text = text[0:MAX_TRACK_LENGTH] + "..."
+        return text
 
     def __get_active_device(self):
         devices = self.spotify.devices()["devices"]
@@ -96,10 +98,10 @@ class App(rumps.App):
         if self.state != self.state_prev:
             self.icon = f"./resources/{state}.png"
         if state == "active":
-            self.title = track  + " · " + str(band)
+            self.title = track + " · " + str(band)
             self.pause_count = 0
         elif state == "paused":
-            self.title = track  + " · " + str(band)
+            self.title = track + " · " + str(band)
         else:
             self.title = str.capitalize(f"{state}")
         if self.state and self.state_prev == "paused":
@@ -121,11 +123,10 @@ class App(rumps.App):
         else:
             self.spotify.current_user_saved_tracks_delete([track_id])
 
-    # TODO fix nonetype error on 115
     @rumps.clicked("Pause/Play")
     def pause_play_track(self, sender):
         try:
-            if self.track_data is None or self.track_data['is_playing'] is False:
+            if self.track_data is None or self.track_data["is_playing"] is False:
                 self.spotify.start_playback(self.__get_active_device())
             else:
                 self.spotify.pause_playback()
@@ -170,9 +171,9 @@ class App(rumps.App):
                 self.__set_saved_track(track_id)
 
                 for artist in artists:
-                    band.append(artist["name"])
-                band = self.__shorten_text(", ".join(band))
-                track = self.__shorten_text(self.track_data["item"]["name"])
+                    band.append(self.__shorten_text(artist["name"]))
+                    track = self.__shorten_text(self.track_data["item"]["name"])
+                band = ", ".join(band)
 
                 if is_playing is True:
                     time_left = (
