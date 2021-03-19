@@ -26,7 +26,7 @@ CLIENT_SECRET = 's0m3s3cr3t'
 CLIENT_ID = 'cl13ntid'
 ```
 ### Build standalone app (optional)
-Your .app will be built to `dist` in your Speck directory.
+Note: You must hard-code your USERNAME, CLIENT_ID, and CLIENT_SECRET. Your .app will be built to `dist` in your Speck directory.
 ```bash
 $ python build_app.py py2app
 ```

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import time
 import os
+import webbrowser
 
 import spotipy
 import spotipy.util as util
@@ -37,6 +38,8 @@ class App(rumps.App):
             None,
             "Save to your Liked Songs",
             None,
+            "Track Info",
+            None
         ]
         self.authorize_spotify()
 
@@ -106,6 +109,10 @@ class App(rumps.App):
             self.title = str.capitalize(f"{state}")
         if self.state and self.state_prev == "paused":
             self.pause_count += 1
+
+    @rumps.clicked("Track Info")
+    def open_browser(self, sender):
+        webbrowser.open(f'https://google.com/search?q={self.track_data["item"]["name"]}+{self.track_data["item"]["artists"][0]["name"]}')
 
     @rumps.clicked("Save to your Liked Songs")
     def add_remove_saved_track(self, sender):
