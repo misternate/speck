@@ -23,12 +23,11 @@ class App(rumps.App):
 
     def __init__(self):
         super(App, self).__init__("Speck")
-        self.token = ""
-        self.spotify = ""
-        self.state_prev = ""
-        self.state = ""
+        self.state_prev = None
+        self.state = None
         self.pause_count = 0
         self.track_data = {}
+        self.last_active_device = None
         self.menu = [
             "Pause/Play",
             None,
@@ -52,6 +51,7 @@ class App(rumps.App):
             auth=self.token, retries=MAX_RETRIES, status_retries=MAX_RETRIES
         )
 
+        self.last_active_device = self.__get_active_device()
         self.update_track()
 
     def __shorten_text(self, text):
@@ -66,9 +66,11 @@ class App(rumps.App):
 
         if active_devices:
             active_device = active_devices[0]["id"]
+        elif self.last_active_device:
+            active_devices = self.last_active_device
         else:
             rumps.alert(
-                title="No active sessions",
+                title="No active devices",
                 message="Start playing music on one of your devices and Speck will start up!",
             )
             active_device = None
@@ -128,7 +130,7 @@ class App(rumps.App):
     def pause_play_track(self, sender):
         try:
             if self.track_data is None or self.track_data["is_playing"] is False:
-                self.spotify.start_playback(self.__get_active_device())
+                self.spotify.start_playback(self.last_active_device)
             else:
                 self.spotify.pause_playback()
             self.update_track(self)
