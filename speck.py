@@ -38,6 +38,7 @@ class App(rumps.App):
             None,
         ]
         self.authorize_spotify()
+        self.last_active_device = self.__get_active_device()
 
     def authorize_spotify(self):
         self.token = util.prompt_for_user_token(
@@ -51,7 +52,6 @@ class App(rumps.App):
             auth=self.token, retries=MAX_RETRIES, status_retries=MAX_RETRIES
         )
 
-        self.last_active_device = self.__get_active_device()
         self.update_track()
 
     def __shorten_text(self, text):
@@ -67,7 +67,7 @@ class App(rumps.App):
         if active_devices:
             active_device = active_devices[0]["id"]
         elif self.last_active_device:
-            active_devices = self.last_active_device
+            active_device = self.last_active_device
         else:
             rumps.alert(
                 title="No active devices",
@@ -110,51 +110,7 @@ class App(rumps.App):
         if self.state and self.state_prev == "paused":
             self.pause_count += 1
 
-    @rumps.clicked("Save to your Liked Songs")
-    def add_remove_saved_track(self, sender):
-        track_id = self.track_data["item"]["id"]
-        if self.spotify.current_user_saved_tracks_contains([track_id])[0] is False:
-            try:
-                self.spotify.current_user_saved_tracks_add(tracks=[track_id])
-                rumps.notification(
-                    title="Saved to your liked songs",
-                    subtitle=None,
-                    message=f'{self.track_data["item"]["artists"][0]["name"]} - {self.track_data["item"]["name"]}',
-                )
-            except SpotifyException:
-                self.authorize_spotify()
-        else:
-            self.spotify.current_user_saved_tracks_delete([track_id])
-
-    @rumps.clicked("Pause/Play")
-    def pause_play_track(self, sender):
-        try:
-            if self.track_data is None or self.track_data["is_playing"] is False:
-                self.spotify.start_playback(self.last_active_device)
-            else:
-                self.spotify.pause_playback()
-            self.update_track(self)
-        except SpotifyException:
-            self.authorize_spotify()
-
-    @rumps.clicked("Next")
-    def next_track(self, sender):
-        try:
-            self.spotify.next_track()
-            time.sleep(0.25)
-            self.update_track()
-        except SpotifyException:
-            self.authorize_spotify()
-
-    @rumps.clicked("Previous")
-    def prev_track(self, sender):
-        try:
-            self.spotify.previous_track()
-            time.sleep(0.25)
-            self.update_track()
-        except SpotifyException:
-            self.authorize_spotify()
-
+    '''RUMPS MENU ITEMS'''
     @rumps.timer(UPDATE_INTERVAL)
     def update_track(self, sender=None):
         if self.token:
@@ -164,13 +120,12 @@ class App(rumps.App):
                 self.authorize_spotify()
                 self.update_track()
 
-            if self.track_data is not None:
+            if self.track_data:
                 is_playing = self.track_data["is_playing"]
                 artists = self.track_data["item"]["artists"]
                 track_id = self.track_data["item"]["id"]
                 band = []
 
-                self.__get_playback_state()
                 self.__set_saved_track(track_id)
 
                 for artist in artists:
@@ -199,7 +154,51 @@ class App(rumps.App):
         else:
             self.__set_menu_playback_state("error")
 
+    @rumps.clicked("Pause/Play")
+    def pause_play_track(self, sender):
+        try:
+            if self.track_data is None or self.track_data["is_playing"] is False:
+                self.spotify.start_playback(self.__get_active_device())
+            else:
+                self.spotify.pause_playback()
+            self.update_track(self)
+        except SpotifyException:
+            self.authorize_spotify()
+
+    @rumps.clicked("Next")
+    def next_track(self, sender):
+        try:
+            self.spotify.next_track()
+            time.sleep(0.25)
+            self.update_track()
+        except SpotifyException:
+            self.authorize_spotify()
+
+    @rumps.clicked("Previous")
+    def prev_track(self, sender):
+        try:
+            self.spotify.previous_track()
+            time.sleep(0.25)
+            self.update_track()
+        except SpotifyException:
+            self.authorize_spotify()
+
+    @rumps.clicked("Save to your Liked Songs")
+    def add_remove_saved_track(self, sender):
+        track_id = self.track_data["item"]["id"]
+        if self.spotify.current_user_saved_tracks_contains([track_id])[0] is False:
+            try:
+                self.spotify.current_user_saved_tracks_add(tracks=[track_id])
+                rumps.notification(
+                    title="Saved to your liked songs",
+                    subtitle=None,
+                    message=f'{self.track_data["item"]["artists"][0]["name"]} - {self.track_data["item"]["name"]}',
+                )
+            except SpotifyException:
+                self.authorize_spotify()
+        else:
+            self.spotify.current_user_saved_tracks_delete([track_id])
+
 
 if __name__ == "__main__":
-    app = App()
-    app.run()
+    App().run()
