@@ -1,20 +1,21 @@
 from setuptools import setup
 
-APP = ['speck.py']
+APP = ["speck.py"]
 DATA_FILES = [
-    './resources',
-    './resources/active.png',
-    './resources/error.png',
-    './resources/paused.png',
-    './resources/sleeping.png'
-    ]
+    "./resources",
+    "./resources/active.png",
+    "./resources/error.png",
+    "./resources/paused.png",
+    "./resources/sleeping.png",
+    "speck.ini",
+]
 OPTIONS = {
-    'argv_emulation': True,
-    'iconfile': 'speck.icns',
-    'plist': {
-        'LSUIElement': True,
+    "argv_emulation": True,
+    "iconfile": "speck.icns",
+    "plist": {
+        "LSUIElement": True,
     },
-    'packages': ['rumps'],
+    "packages": ["rumps"],
 }
 
 
@@ -23,7 +24,7 @@ setup(
     app=APP,
     data_files=DATA_FILES,
     options={
-        'py2app': OPTIONS,
+        "py2app": OPTIONS,
     },
-    setup_requires=['py2app'],
+    setup_requires=["py2app"],
 )

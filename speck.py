@@ -2,24 +2,28 @@
 import time
 import os
 import webbrowser
+from configparser import ConfigParser
 
 import spotipy
 from spotipy import util
 from spotipy import SpotifyException
 import rumps
 
-REDIRECT_URI = "http://localhost:8888/callback/"
-SCOPE = "user-read-playback-state,user-library-modify,user-modify-playback-state,user-library-read"
-MAX_TRACK_LENGTH = 32
-MAX_RETRIES = 24
-UPDATE_INTERVAL = 5
+config = ConfigParser()
+config.read("speck.ini")
 
-USERNAME = os.getenv("SPOTIPY_USERNAME")
-CLIENT_ID = os.getenv("SPOTIPY_CLIENT_ID")
-CLIENT_SECRET = os.getenv("SPOTIPY_CLIENT_SECRET")
+CLIENT_ID = config["secrets"]["client_id"]
+CLIENT_SECRET = config["secrets"]["client_secret"]
+USERNAME = config["secrets"]["username"]
+REDIRECT_URI = config["settings"]["redirect_uri"]
+SCOPE = config["settings"]["scope"]
+MAX_TRACK_LENGTH = int(config["settings"]["max_track_length"])
+MAX_RETRIES = int(config["settings"]["max_retries"])
+UPDATE_INTERVAL = float(config["settings"]["update_interval"])
 
 
 class App(rumps.App):
+    # pylint: disable=too-many-instance-attributes
     """Main app with rumps sub"""
 
     rumps.debug_mode(True)
@@ -162,7 +166,7 @@ class App(rumps.App):
             self.authorize_spotify()
 
     @rumps.clicked("Previous")
-    def prev_track(self, sender=None) -> None:
+    def prev_track(self, sender) -> None:
         """Previous track"""
         try:
             self.spotify.previous_track()
