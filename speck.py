@@ -4,7 +4,7 @@ import os
 import webbrowser
 
 import spotipy
-import spotipy.util as util
+from spotipy import util
 from spotipy import SpotifyException
 import rumps
 
@@ -20,9 +20,11 @@ CLIENT_SECRET = os.getenv("SPOTIPY_CLIENT_SECRET")
 
 
 class App(rumps.App):
+    """Main app with rumps sub"""
+
     rumps.debug_mode(True)
 
-    def __init__(self):
+    def __init__(self) -> None:
         super(App, self).__init__("Speck")
         self.token = ""
         self.spotify = ""
@@ -39,11 +41,12 @@ class App(rumps.App):
             "Save to your Liked Songs",
             None,
             "Track Info",
-            None
+            None,
         ]
         self.authorize_spotify()
 
-    def authorize_spotify(self):
+    def authorize_spotify(self) -> None:
+        """Authorization method used in stand up and checks"""
         self.token = util.prompt_for_user_token(
             USERNAME,
             scope=SCOPE,
@@ -57,12 +60,12 @@ class App(rumps.App):
 
         self.update_track()
 
-    def __shorten_text(self, text):
+    def __shorten_text(self, text: str) -> str:
         if len(text) > MAX_TRACK_LENGTH:
             text = text[0:MAX_TRACK_LENGTH] + "..."
         return text
 
-    def __get_active_device(self):
+    def __get_active_device(self) -> list:
         devices = self.spotify.devices()["devices"]
         active_devices = [device for device in devices if device["is_active"] is True]
 
@@ -77,7 +80,7 @@ class App(rumps.App):
 
         return active_device
 
-    def __set_saved_track(self, track_id):
+    def __set_saved_track(self, track_id: str) -> None:
         menu_item = self._menu["Save to your Liked Songs"]
 
         if self.spotify.current_user_saved_tracks_contains([track_id])[0] is True:
@@ -86,7 +89,7 @@ class App(rumps.App):
             menu_item.title = "Save to your Liked Songs"
             menu_item.set_callback(self.add_remove_saved_track)
 
-    def __get_playback_state(self):
+    def __get_playback_state(self) -> None:
         menu_item = self._menu["Pause/Play"]
 
         if self.track_data["is_playing"] is True:
@@ -95,7 +98,9 @@ class App(rumps.App):
             menu_item.title = "Play"
             menu_item.set_callback(self.pause_play_track)
 
-    def __set_menu_playback_state(self, state, track=None, band=None):
+    def __set_menu_playback_state(
+        self, state: str, track: str = None, band: str = None
+    ) -> None:
         self.state = state
 
         if self.state != self.state_prev:
@@ -111,11 +116,15 @@ class App(rumps.App):
             self.pause_count += 1
 
     @rumps.clicked("Track Info")
-    def open_browser(self, sender):
-        webbrowser.open(f'https://google.com/search?q={self.track_data["item"]["name"]}+{self.track_data["item"]["artists"][0]["name"]}')
+    def open_browser(self, sender) -> None:
+        """Open web browser to search track information"""
+        webbrowser.open(
+            f'https://google.com/search?q={self.track_data["item"]["name"]}+{self.track_data["item"]["artists"][0]["name"]}'
+        )
 
     @rumps.clicked("Save to your Liked Songs")
-    def add_remove_saved_track(self, sender):
+    def add_remove_saved_track(self, sender) -> None:
+        "Add or remove playing track to Liked playlist"
         track_id = self.track_data["item"]["id"]
         if self.spotify.current_user_saved_tracks_contains([track_id])[0] is False:
             try:
@@ -131,7 +140,8 @@ class App(rumps.App):
             self.spotify.current_user_saved_tracks_delete([track_id])
 
     @rumps.clicked("Pause/Play")
-    def pause_play_track(self, sender):
+    def pause_play_track(self, sender) -> None:
+        """Pause or play track based on playback status"""
         try:
             if self.track_data is None or self.track_data["is_playing"] is False:
                 self.spotify.start_playback(self.__get_active_device())
@@ -142,7 +152,8 @@ class App(rumps.App):
             self.authorize_spotify()
 
     @rumps.clicked("Next")
-    def next_track(self, sender):
+    def next_track(self, sender) -> None:
+        """Next track"""
         try:
             self.spotify.next_track()
             time.sleep(0.25)
@@ -151,7 +162,8 @@ class App(rumps.App):
             self.authorize_spotify()
 
     @rumps.clicked("Previous")
-    def prev_track(self, sender):
+    def prev_track(self, sender=None) -> None:
+        """Previous track"""
         try:
             self.spotify.previous_track()
             time.sleep(0.25)
@@ -160,7 +172,8 @@ class App(rumps.App):
             self.authorize_spotify()
 
     @rumps.timer(UPDATE_INTERVAL)
-    def update_track(self, sender=None):
+    def update_track(self, sender=None) -> None:
+        """Update the track data listed in menubar"""
         if self.token:
             try:
                 self.track_data = self.spotify.current_user_playing_track()
@@ -186,7 +199,8 @@ class App(rumps.App):
                     time_left = (
                         int(self.track_data["item"]["duration_ms"]) / 1000
                         - int(self.track_data["progress_ms"]) / 1000
-                    )
+                    )  # currently unused; TBU for better tracking without polling
+
                     self.state_prev = self.state
                     self.state = "active"
 
