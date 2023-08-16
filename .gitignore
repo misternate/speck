@@ -5,4 +5,4 @@ env/
 dist/
 build/
 .eggs/
-speck_mn.ini
+speck.ini
