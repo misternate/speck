@@ -9,12 +9,17 @@ from spotipy import util
 from spotipy import SpotifyException
 import rumps
 
+# Config
 config = ConfigParser()
 config.read("speck.ini")
 
+# Config > Secrets
 CLIENT_ID = config["secrets"]["client_id"]
 CLIENT_SECRET = config["secrets"]["client_secret"]
 USERNAME = config["secrets"]["username"]
+
+# Config > Settings
+DEBUG = config["settings"]["debug"]
 REDIRECT_URI = config["settings"]["redirect_uri"]
 SCOPE = config["settings"]["scope"]
 MAX_TRACK_LENGTH = int(config["settings"]["max_track_length"])
@@ -26,7 +31,7 @@ class App(rumps.App):
     # pylint: disable=too-many-instance-attributes
     """Main app with rumps sub"""
 
-    rumps.debug_mode(True)
+    rumps.debug_mode(DEBUG)
 
     def __init__(self) -> None:
         super(App, self).__init__("Speck")
