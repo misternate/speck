@@ -76,9 +76,15 @@ class App(rumps.App):
     def __get_active_device(self) -> list:
         devices = self.spotify.devices()["devices"]
         active_devices = [device for device in devices if device["is_active"] is True]
+        computer_device = [device["id"] for device in devices if device["type"].lower() == "computer"]
 
+        """This checks for an active session and then falls back to
+        your current computer, which is often the case."""
+        # TODO Add multi-device support or device selector
         if active_devices:
             active_device = active_devices[0]["id"]
+        elif computer_device:
+            active_device = computer_device[0]
         else:
             rumps.alert(
                 title="No active sessions",
@@ -152,6 +158,7 @@ class App(rumps.App):
         """Pause or play track based on playback status"""
         try:
             if self.track_data is None or self.track_data["is_playing"] is False:
+                # self.spotify.transfer_playback(device_id=self.__get_active_device(), force_play=True)
                 self.spotify.start_playback(self.__get_active_device())
             else:
                 self.spotify.pause_playback()
