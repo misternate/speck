@@ -40,6 +40,7 @@ class App(rumps.App):
         self.state = ""
         self.pause_count = 0
         self.track_data = {}
+        self.device_selected = ""
         self.menu = [
             "Pause/Play",
             None,
@@ -54,9 +55,23 @@ class App(rumps.App):
         ]
         self.authorize_spotify()
 
-        devices = [device for device in self.spotify.devices()["devices"]]
-        for device in devices:
-            self.menu["Devices"].add(f"{device['name']} : {device['id']}")
+        self.devices = [device for device in self.spotify.devices()["devices"]]
+        for device in self.devices:
+            self.menu["Devices"].add(device["name"])
+            self.device_titles = self.menu["Devices"][device["name"]].title
+            self.menu["Devices"][device["name"]].set_callback(self.select_device)
+
+    def select_device(self, sender):
+        device_title = sender.title
+
+        for device in self.devices:
+            if device["name"] == device_title:
+                device_id = device["id"]
+                self.device_selected = device_id
+                for item in self.menu["Devices"]:
+                    self.menu["Devices"][item].state = 0
+                sender.state = 1
+                print(device_id)
 
     def authorize_spotify(self) -> None:
         """Authorization method used in stand up and checks"""
