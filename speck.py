@@ -59,9 +59,9 @@ class App(rumps.App):
         for device in self.devices:
             self.menu["Devices"].add(device["name"])
             self.device_titles = self.menu["Devices"][device["name"]].title
-            self.menu["Devices"][device["name"]].set_callback(self.select_device)
+            self.menu["Devices"][device["name"]].set_callback(self.set_active_device)
 
-    def select_device(self, sender):
+    def set_active_device(self, sender):
         device_title = sender.title
 
         for device in self.devices:
@@ -71,7 +71,7 @@ class App(rumps.App):
                 for item in self.menu["Devices"]:
                     self.menu["Devices"][item].state = 0
                 sender.state = 1
-                print(device_id)
+                self.pause_play_track()
 
     def authorize_spotify(self) -> None:
         """Authorization method used in stand up and checks"""
@@ -96,19 +96,15 @@ class App(rumps.App):
     def __get_active_device(self) -> list:
         devices = self.spotify.devices()["devices"]
         active_devices = [device for device in devices if device["is_active"] is True]
-        computer_device = [device["id"] for device in devices if device["type"].lower() == "computer"]
 
-        """This checks for an active session and then falls back to
-        your current computer, which is often the case."""
-        # TODO Add multi-device support or add first active device to ini (https://stackoverflow.com/questions/8884188/how-to-read-and-write-ini-file-with-python3)
-        if active_devices:
+        if self.device_selected:
+            active_device = self.device_selected
+        elif active_devices:
             active_device = active_devices[0]["id"]
-        elif computer_device:
-            active_device = computer_device[0]
         else:
             rumps.alert(
-                title="No active sessions",
-                message="Start playing music on one of your devices and Speck will start up!",
+                title="No active devices",
+                message="Select a device from the Devices menu.",
             )
             active_device = None
 
@@ -177,9 +173,8 @@ class App(rumps.App):
     def pause_play_track(self, sender) -> None:
         """Pause or play track based on playback status"""
         try:
-            if self.track_data is None or self.track_data["is_playing"] is False:
-                # self.spotify.transfer_playback(device_id=self.__get_active_device(), force_play=True)
-                self.spotify.start_playback(self.__get_active_device())
+            if self.track_data["is_playing"] is False:
+                self.spotify.transfer_playback(device_id=self.__get_active_device(), force_play=True)
             else:
                 self.spotify.pause_playback()
             self.update_track(self)
