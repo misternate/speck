@@ -50,8 +50,13 @@ class App(rumps.App):
             None,
             "Track Info",
             None,
+            "Devices"
         ]
         self.authorize_spotify()
+
+        devices = [device for device in self.spotify.devices()["devices"]]
+        for device in devices:
+            self.menu["Devices"].add(f"{device['name']} : {device['id']}")
 
     def authorize_spotify(self) -> None:
         """Authorization method used in stand up and checks"""
@@ -80,7 +85,7 @@ class App(rumps.App):
 
         """This checks for an active session and then falls back to
         your current computer, which is often the case."""
-        # TODO Add multi-device support or device selector
+        # TODO Add multi-device support or add first active device to ini (https://stackoverflow.com/questions/8884188/how-to-read-and-write-ini-file-with-python3)
         if active_devices:
             active_device = active_devices[0]["id"]
         elif computer_device:
