@@ -56,14 +56,17 @@ class App(rumps.App):
         self.authorize_spotify()
 
         self.devices = [device for device in self.spotify.devices()["devices"]]
+        
+        # Populate menu with all devices
         for device in self.devices:
             self.menu["Devices"].add(device["name"])
             self.device_titles = self.menu["Devices"][device["name"]].title
             self.menu["Devices"][device["name"]].set_callback(self.set_active_device)
 
     def set_active_device(self, sender):
+        # should also check on id from __get_active_device() on initial load and then set state
+        
         device_title = sender.title
-
         for device in self.devices:
             if device["name"] == device_title:
                 device_id = device["id"]
@@ -173,7 +176,12 @@ class App(rumps.App):
     def pause_play_track(self, sender) -> None:
         """Pause or play track based on playback status"""
         try:
-            if self.track_data["is_playing"] is False:
+            if self.track_data is None:
+                rumps.alert(
+                    title="No active songs",
+                    message="Play a song from the Spotify app.",
+                )
+            elif self.track_data["is_playing"] is False:
                 self.spotify.transfer_playback(device_id=self.__get_active_device(), force_play=True)
             else:
                 self.spotify.pause_playback()
