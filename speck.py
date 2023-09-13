@@ -156,7 +156,6 @@ class App(rumps.App):
         band = []
         for artist in artists:
             band.append(self.__shorten_text(artist))
-            track = self.__shorten_text(self.track_data["item"]["name"])
         band = ", ".join(band)
 
         return band
