@@ -49,12 +49,13 @@ class App(rumps.App):
             "Track Info",
             None,
             "Devices",
-            None
+            None,
         ]
         self.authorize_spotify()
         self.populate_menu_device()
 
     """ Devices """
+
     def populate_menu_device(self):
         self.devices = [device for device in self.spotify.devices()["devices"]]
         for device in self.devices:
@@ -92,6 +93,7 @@ class App(rumps.App):
                 self.pause_play_track(sender)
 
     """ Spotify """
+
     def authorize_spotify(self) -> None:
         self.token = util.prompt_for_user_token(
             USERNAME,
@@ -107,6 +109,7 @@ class App(rumps.App):
         self.update_track()
 
     """ Spotify > Functions """
+
     def __set_saved_track(self, track_id: str) -> None:
         menu_item = self._menu["Save to your Liked Songs"]
 
@@ -143,12 +146,14 @@ class App(rumps.App):
             self.pause_count += 1
 
     """ Utils """
+
     def __shorten_text(self, text: str) -> str:
         if len(text) > MAX_TRACK_LENGTH:
             text = text[0:MAX_TRACK_LENGTH] + "..."
         return text
 
     """ Rumps Player """
+
     @rumps.clicked("Pause/Play")
     def pause_play_track(self, sender) -> None:
         """Pause or play track based on playback status"""
@@ -158,9 +163,10 @@ class App(rumps.App):
                     title="No active songs",
                     message="Play a song from the Spotify app.",
                 )
+            elif self.state == "active":
+                self.spotify.pause_playback()
             else:
                 self.spotify.transfer_playback(device_id=self.__get_active_device())
-                
             self.update_track(self)
         except SpotifyException:
             self.authorize_spotify()
@@ -209,6 +215,7 @@ class App(rumps.App):
             self.spotify.current_user_saved_tracks_delete([track_id])
 
     """ Timer """
+
     @rumps.timer(UPDATE_INTERVAL)
     def update_track(self, sender=None) -> None:
         if self.token:
@@ -220,7 +227,7 @@ class App(rumps.App):
 
             if self.track_data is not None:
                 is_playing = self.track_data["is_playing"]
-                artists = self.track_data["item"]["artists"]
+                artists = [self.track_data["item"]["artists"][0]["name"]]
                 track_id = self.track_data["item"]["id"]
                 band = []
 
@@ -228,7 +235,7 @@ class App(rumps.App):
                 self.__set_saved_track(track_id)
 
                 for artist in artists:
-                    band.append(self.__shorten_text(artist["name"]))
+                    band.append(self.__shorten_text(artist))
                     track = self.__shorten_text(self.track_data["item"]["name"])
                 band = ", ".join(band)
 
