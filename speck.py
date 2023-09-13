@@ -151,6 +151,15 @@ class App(rumps.App):
         if len(text) > MAX_TRACK_LENGTH:
             text = text[0:MAX_TRACK_LENGTH] + "..."
         return text
+    
+    def __get_bands(self, artists: str) -> str:
+        band = []
+        for artist in artists:
+            band.append(self.__shorten_text(artist))
+            track = self.__shorten_text(self.track_data["item"]["name"])
+        band = ", ".join(band)
+
+        return band
 
     """ Rumps Player """
 
@@ -214,7 +223,7 @@ class App(rumps.App):
         else:
             self.spotify.current_user_saved_tracks_delete([track_id])
 
-    """ Timer """
+    """ Track Update """
 
     @rumps.timer(UPDATE_INTERVAL)
     def update_track(self, sender=None) -> None:
@@ -227,17 +236,12 @@ class App(rumps.App):
 
             if self.track_data is not None:
                 is_playing = self.track_data["is_playing"]
-                artists = [self.track_data["item"]["artists"][0]["name"]]
                 track_id = self.track_data["item"]["id"]
-                band = []
+                track = self.__shorten_text(self.track_data["item"]["name"])
+                band = self.__get_bands([self.track_data["item"]["artists"][0]["name"]])
 
                 self.__get_playback_state()
                 self.__set_saved_track(track_id)
-
-                for artist in artists:
-                    band.append(self.__shorten_text(artist))
-                    track = self.__shorten_text(self.track_data["item"]["name"])
-                band = ", ".join(band)
 
                 if is_playing is True:
                     self.state_prev = self.state
