@@ -109,8 +109,6 @@ class App(rumps.App):
             auth=self.token, retries=MAX_RETRIES, status_retries=MAX_RETRIES
         )
 
-        self.update_track()
-
     """ Spotify > Functions """
 
     def __set_saved_track(self, track_id: str) -> None:
@@ -134,9 +132,7 @@ class App(rumps.App):
     def __set_menu_playback_state(
         self, state: str, track: str = None, band: str = None
     ) -> None:
-        self.state = state
-
-        if self.state != self.state_prev:
+        if state != self.state_prev:
             self.icon = f"./resources/{state}.png"
         if state == "active":
             self.title = track + " · " + str(band)
