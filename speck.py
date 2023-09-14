@@ -63,6 +63,9 @@ class App(rumps.App):
             self.device_titles = self.menu["Devices"][device["name"]].title
             self.menu["Devices"][device["name"]].set_callback(self.__set_active_device)
 
+            if device["is_active"]:
+                self.menu["Devices"][device["name"]].state = 1
+
     def __get_active_device(self) -> list:
         devices = self.spotify.devices()["devices"]
         active_devices = [device for device in devices if device["is_active"] is True]
