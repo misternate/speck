@@ -63,6 +63,9 @@ class App(rumps.App):
             self.device_titles = self.menu["Devices"][device["name"]].title
             self.menu["Devices"][device["name"]].set_callback(self.__set_active_device)
 
+            if device["is_active"]:
+                self.menu["Devices"][device["name"]].state = 1
+
     def __get_active_device(self) -> list:
         devices = self.spotify.devices()["devices"]
         active_devices = [device for device in devices if device["is_active"] is True]
@@ -106,8 +109,6 @@ class App(rumps.App):
             auth=self.token, retries=MAX_RETRIES, status_retries=MAX_RETRIES
         )
 
-        self.update_track()
-
     """ Spotify > Functions """
 
     def __set_saved_track(self, track_id: str) -> None:
@@ -131,9 +132,7 @@ class App(rumps.App):
     def __set_menu_playback_state(
         self, state: str, track: str = None, band: str = None
     ) -> None:
-        self.state = state
-
-        if self.state != self.state_prev:
+        if state != self.state_prev:
             self.icon = f"./resources/{state}.png"
         if state == "active":
             self.title = track + " · " + str(band)
@@ -151,6 +150,14 @@ class App(rumps.App):
         if len(text) > MAX_TRACK_LENGTH:
             text = text[0:MAX_TRACK_LENGTH] + "..."
         return text
+    
+    def __get_bands(self, artists: str) -> str:
+        band = []
+        for artist in artists:
+            band.append(self.__shorten_text(artist))
+        band = ", ".join(band)
+
+        return band
 
     """ Rumps Player """
 
@@ -214,7 +221,7 @@ class App(rumps.App):
         else:
             self.spotify.current_user_saved_tracks_delete([track_id])
 
-    """ Timer """
+    """ Track Update """
 
     @rumps.timer(UPDATE_INTERVAL)
     def update_track(self, sender=None) -> None:
@@ -227,17 +234,12 @@ class App(rumps.App):
 
             if self.track_data is not None:
                 is_playing = self.track_data["is_playing"]
-                artists = [self.track_data["item"]["artists"][0]["name"]]
                 track_id = self.track_data["item"]["id"]
-                band = []
+                track = self.__shorten_text(self.track_data["item"]["name"])
+                band = self.__get_bands([self.track_data["item"]["artists"][0]["name"]])
 
                 self.__get_playback_state()
                 self.__set_saved_track(track_id)
-
-                for artist in artists:
-                    band.append(self.__shorten_text(artist))
-                    track = self.__shorten_text(self.track_data["item"]["name"])
-                band = ", ".join(band)
 
                 if is_playing is True:
                     self.state_prev = self.state
