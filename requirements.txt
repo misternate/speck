@@ -2,7 +2,7 @@ altgraph==0.17.3
 async-timeout==4.0.3
 certifi==2023.7.22
 chardet==5.2.0
-idna==3.4
+idna==3.7
 importlib-metadata==6.8.0
 macholib==1.16.2
 modulegraph==0.19.5
