@@ -14,7 +14,7 @@ pyobjc-core==9.2
 pyobjc-framework-Cocoa==9.2
 pyproject_hooks==1.0.0
 redis==5.0.0
-requests==2.31.0
+requests==2.32.0
 rumps==0.3.0
 six==1.16.0
 spotipy==2.22.1
