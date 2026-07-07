@@ -10,7 +10,7 @@ DATA_FILES = [
     "speck.ini",
 ]
 OPTIONS = {
-    "argv_emulation": True,
+    "argv_emulation": False,
     "iconfile": "speck.icns",
     "plist": {
         "LSUIElement": True,
