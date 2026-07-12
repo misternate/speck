@@ -1,6 +1,6 @@
 altgraph==0.17.3
 async-timeout==4.0.3
-certifi==2023.7.22
+certifi==2024.7.4
 chardet==5.2.0
 idna==3.4
 importlib-metadata==6.8.0
